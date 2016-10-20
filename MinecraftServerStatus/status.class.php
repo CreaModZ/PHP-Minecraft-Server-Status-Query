@@ -10,15 +10,15 @@
 
         private $timeout;
 
-        public function __construct($timeout = 2) {
+        public function __construct($timeout = 2){
             $this->timeout = $timeout;
         }
 
         public function getStatus($host = '127.0.0.1', $version = '1.7.*' , $port = 25565) {
 
-            if (substr_count($host , '.') != 4) $host = gethostbyname($host);
+            if (substr_count($host, '.') != 4) $host = gethostbyname($host);
 
-            $serverdata = array();
+            $serverdata = [];
             $serverdata['hostname'] = $host;
             $serverdata['version'] = false;
             $serverdata['protocol'] = false;
@@ -31,9 +31,7 @@
 
             $socket = $this->connect($host, $port);
 
-            if(!$socket) {
-                return false;
-            }
+            if(!$socket){ return false }
 
             if(preg_match('/1.7|1.8/',$version)) {
 
@@ -45,13 +43,11 @@
                 socket_send($socket, "\x01\x00", 2, 0);
                 socket_read( $socket, 1 );
 
-                $ping = round((microtime(true)-$start)*1000); //calculate the high five duration
+                $ping = round((microtime(true)-$start) * 1000); //calculate the high five duration
 
                 $packetlength = $this->read_packet_length($socket);
 
-                if($packetlength < 10) {
-                    return false;
-                }
+                if($packetlength < 10){ return false }
 
                 socket_read($socket, 1);
 
@@ -59,9 +55,7 @@
 
                 $data = socket_read($socket, $packetlength, PHP_NORMAL_READ);
 
-                if(!$data) {
-                    return false;
-                }
+                if(!$data){ return false }
 
                 $data = json_decode($data);
 
@@ -86,7 +80,7 @@
                 socket_send($socket, "\xFE\x01", 2, 0);
                 $length = socket_recv($socket, $data, 512, 0);
 
-                $ping = round((microtime(true)-$start)*1000);//calculate the high five duration
+                $ping = round((microtime(true)-$start) * 1000); //calculate the high five duration
                 
                 if($length < 4 || $data[0] != "\xFF") {
                     return false;
@@ -110,6 +104,7 @@
                                 $motd .= '§'.$string;
                             }
                         }
+                    
                         $motdraw = $motd;
                     }
 
@@ -133,10 +128,12 @@
 
         private function connect($host, $port) {
             $socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+            
             if (!@socket_connect($socket, $host, $port)) {
         		$this->disconnect($socket);
         		return false;
     	    }
+            
             return $socket;
         }
 
@@ -149,20 +146,26 @@
         private function read_packet_length($socket) {
             $a = 0;
             $b = 0;
+            
             while(true) {
                 $c = socket_read($socket, 1);
+                
                 if(!$c) {
                     return 0;
                 }
+                
                 $c = Ord($c);
                 $a |= ($c & 0x7F) << $b++ * 7;
+                
                 if( $b > 5 ) {
                     return false;
                 }
+                
                 if(($c & 0x80) != 128) {
                     break;
                 }
             }
+            
             return $a;
         }
 
